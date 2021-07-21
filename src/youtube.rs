@@ -10,6 +10,7 @@ use std::result::Result;
 #[derive(Clone)]
 pub struct YouTubeSearchEntry {
     pub id: String,
+    pub uploader: String,
     pub description: String,
     pub title: String,
     pub likes: i32,
@@ -23,10 +24,13 @@ fn strip_quotes(s: String) -> String {
 /// Searches YouTube for the given query string. The limit
 /// specifies how many results to include in the search, the higher the limit
 /// the more time it takes for youtube-dl to search however.
-pub fn search(query: &str, limit: i32) 
+pub fn search(query: &str, limit: i32, quiet: bool) 
     -> Result<Vec<YouTubeSearchEntry>, Box<dyn Error>> 
 {
-    let sp = Spinner::new(Spinners::Dots, "Searching YouTube, please wait..".into());
+    let mut sp: Option<Spinner> = None;
+    if !quiet {
+        sp = Some(Spinner::new(Spinners::Dots, "Searching YouTube, please wait..".into()));
+    }
 
     let mut results: Vec<YouTubeSearchEntry> = Vec::new();
     let query = format!("ytsearch{}:{}", limit, query);
@@ -45,7 +49,12 @@ pub fn search(query: &str, limit: i32)
     for entry in entries {
         results.push(YouTubeSearchEntry {
             id: strip_quotes(entry.get("id").unwrap().to_string()),
-            description: strip_quotes(entry.get("description").unwrap().to_string()),
+            uploader: strip_quotes(entry.get("uploader").unwrap().to_string()),
+            description: if let Some(description) = entry.get("description") {
+                strip_quotes(description.to_string())
+            } else {
+                strip_quotes("No description".to_string())
+            },
             title: strip_quotes(entry.get("title").unwrap().to_string()),
             likes: strip_quotes(entry.get("like_count").unwrap().to_string())
                 .parse::<i32>()?,
@@ -54,14 +63,16 @@ pub fn search(query: &str, limit: i32)
         });
     }
 
-    sp.stop();
+    if let Some(sp) = sp {
+        sp.stop();
+    }
     Ok(results)
 }
 
-pub fn search_id(video_id: &str)
+pub fn search_id(video_id: &str, quiet: bool)
     -> Result<YouTubeSearchEntry, Box<dyn Error>>
 {
-    let results = search(video_id, 1)?;
+    let results = search(video_id, 1, quiet)?;
     let result = &results[0];
 
     Ok(result.clone())
