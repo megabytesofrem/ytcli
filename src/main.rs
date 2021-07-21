@@ -77,10 +77,12 @@ fn show_info(opts: &Opts, video_id: &str) -> Result<(), Box<dyn Error>> {
 
     println!();
     println!("{}: {}", "Title".red().underline(), 
-                        result.title.white().underline());
+                        result.title.underline());
+    println!("{}: {}", "Channel".red().underline(), 
+                        result.uploader.underline());
     println!("{}: {} ({})", "VidId".red(), result.id, 
                         "https://youtube.com/watch?v=".to_string() + &result.id);
-    println!("{}: {}", "Descr".red().underline(), result.description.replace('\n', ".").white().dimmed());
+    println!("{}: {}", "Descr".red().underline(), result.description.dimmed());
     println!();
     println!("{}: {} {}",
         "Ratio".red().underline(),
